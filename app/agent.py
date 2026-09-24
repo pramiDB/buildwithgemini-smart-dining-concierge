@@ -481,7 +481,10 @@ MEMORY_BANK_ID = "4368257992328478720"
 
 
 async def generate_memories_callback(callback_context: CallbackContext):
-    await callback_context.add_session_to_memory()
+    try:
+        await callback_context.add_session_to_memory()
+    except Exception as e:
+        logging.warning(f"Skipping memory generation (memory service unavailable): {e}")
     return None
 
 
