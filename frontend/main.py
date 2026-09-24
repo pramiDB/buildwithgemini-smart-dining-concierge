@@ -188,10 +188,17 @@ async def chat(req: Request):
                 got_artifact_update = True
                 parts.extend(_extract_parts(update.artifact.parts))
 
-        # Non-streaming fallback: pull parts from the final task's artifacts.
-        if not got_artifact_update and last_task is not None:
+        # Non-streaming fallback: pull parts from the final task's artifacts or message history.
+        if not parts and last_task is not None:
             for artifact in getattr(last_task, "artifacts", None) or []:
                 parts.extend(_extract_parts(artifact.parts))
+            if not parts and getattr(last_task, "history", None):
+                for msg_item in reversed(last_task.history):
+                    if getattr(msg_item, "role", None) == Role.agent and getattr(msg_item, "parts", None):
+                        extracted = _extract_parts(msg_item.parts)
+                        if extracted:
+                            parts = extracted
+                            break
 
     if not parts:
         # The turn produced no text or UI (e.g. the agent only ran tools, or a
